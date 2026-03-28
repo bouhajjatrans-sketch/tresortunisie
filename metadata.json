@@ -1,0 +1,5 @@
+{
+  "name": "TresorTunisie",
+  "description": "Application moderne de gestion de trésorerie pour entreprises tunisiennes. Suivi de caisse, comptes bancaires et dettes fournisseurs.",
+  "requestFramePermissions": []
+}

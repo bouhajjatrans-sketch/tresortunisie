@@ -1,0 +1,194 @@
+{
+  "entities": {
+    "Supplier": {
+      "title": "Fournisseur",
+      "description": "Un fournisseur de l'entreprise.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "balance": { "type": "number", "description": "Solde dû au fournisseur" },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "phone", "categoryId", "balance", "userId"]
+    },
+    "Category": {
+      "title": "Catégorie",
+      "description": "Catégorie globale (Fournisseur, Dépense, Recette).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["supplier", "expense", "revenue"] },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "type", "userId"]
+    },
+    "Payment": {
+      "title": "Paiement Fournisseur",
+      "description": "Paiement effectué à un fournisseur.",
+      "type": "object",
+      "properties": {
+        "supplierId": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["cash", "cheque", "transfer"] },
+        "date": { "type": "string", "format": "date-time" },
+        "chequeId": { "type": "string", "description": "Optionnel, si méthode = cheque" },
+        "bankAccountId": { "type": "string", "description": "Optionnel, si méthode = cheque ou transfer" },
+        "userId": { "type": "string" }
+      },
+      "required": ["supplierId", "amount", "method", "date", "userId"]
+    },
+    "Cheque": {
+      "title": "Chèque",
+      "description": "Gestion des chèques émis ou reçus.",
+      "type": "object",
+      "properties": {
+        "number": { "type": "string" },
+        "amount": { "type": "number" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "supplierId": { "type": "string", "description": "Si émis à un fournisseur" },
+        "status": { "type": "string", "enum": ["pending", "cashed", "cancelled"] },
+        "type": { "type": "string", "enum": ["issued", "received"] },
+        "bankAccountId": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["number", "amount", "dueDate", "status", "type", "bankAccountId", "userId"]
+    },
+    "Revenue": {
+      "title": "Recette",
+      "description": "Entrée d'argent (Ventes PDA, Dépôt central).",
+      "type": "object",
+      "properties": {
+        "source": { "type": "string", "enum": ["pda", "warehouse"] },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["cash", "cheque"] },
+        "date": { "type": "string", "format": "date-time" },
+        "categoryId": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["source", "amount", "method", "date", "categoryId", "userId"]
+    },
+    "Expense": {
+      "title": "Dépense",
+      "description": "Dépense opérationnelle (hors fournisseurs).",
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "categoryId": { "type": "string" },
+        "method": { "type": "string", "enum": ["cash", "transfer"] },
+        "userId": { "type": "string" }
+      },
+      "required": ["description", "amount", "date", "categoryId", "method", "userId"]
+    },
+    "Transfer": {
+      "title": "Transfert Caisse vers Banque",
+      "description": "Transfert de fonds interne.",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "bankAccountId": { "type": "string" },
+        "reference": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["amount", "date", "bankAccountId", "userId"]
+    },
+    "CaisseState": {
+      "title": "État de la Caisse",
+      "description": "Solde actuel de la caisse centrale.",
+      "type": "object",
+      "properties": {
+        "balance": { "type": "number" },
+        "userId": { "type": "string" }
+      },
+      "required": ["balance", "userId"]
+    },
+    "BankAccount": {
+      "title": "Compte Bancaire",
+      "description": "Détails d'un compte bancaire.",
+      "type": "object",
+      "properties": {
+        "bankName": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "agency": { "type": "string" },
+        "balance": { "type": "number" },
+        "type": { "type": "string", "enum": ["current", "savings"] },
+        "userId": { "type": "string" }
+      },
+      "required": ["bankName", "accountNumber", "agency", "balance", "type", "userId"]
+    },
+    "Purchase": {
+      "title": "Achat / Dette Fournisseur",
+      "description": "Enregistrement d'une dette envers un fournisseur.",
+      "type": "object",
+      "properties": {
+        "supplierId": { "type": "string" },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" }
+      },
+      "required": ["supplierId", "amount", "description", "date", "userId"]
+    },
+    "Customer": {
+      "title": "Client",
+      "description": "Un client de l'entreprise.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "balance": { "type": "number", "description": "Solde dû par le client" },
+        "userId": { "type": "string" }
+      },
+      "required": ["name", "phone", "balance", "userId"]
+    },
+    "CustomerPayment": {
+      "title": "Paiement Client",
+      "description": "Paiement reçu d'un client.",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["cash", "cheque", "transfer"] },
+        "date": { "type": "string", "format": "date-time" },
+        "chequeId": { "type": "string" },
+        "bankAccountId": { "type": "string" },
+        "userId": { "type": "string" }
+      },
+      "required": ["customerId", "amount", "method", "date", "userId"]
+    },
+    "Sale": {
+      "title": "Vente / Créance Client",
+      "description": "Enregistrement d'une créance client (vente à crédit).",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string" },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" }
+      },
+      "required": ["customerId", "amount", "description", "date", "userId"]
+    }
+  },
+  "firestore": {
+    "suppliers": { "schema": "Supplier", "description": "Liste des fournisseurs" },
+    "customers": { "schema": "Customer", "description": "Liste des clients" },
+    "categories": { "schema": "Category", "description": "Liste des catégories globales" },
+    "payments": { "schema": "Payment", "description": "Historique des paiements fournisseurs" },
+    "customerPayments": { "schema": "CustomerPayment", "description": "Historique des paiements reçus des clients" },
+    "cheques": { "schema": "Cheque", "description": "Gestion des chèques" },
+    "revenues": { "schema": "Revenue", "description": "Historique des recettes" },
+    "expenses": { "schema": "Expense", "description": "Historique des dépenses" },
+    "transfers": { "schema": "Transfer", "description": "Historique des transferts Caisse -> Banque" },
+    "purchases": { "schema": "Purchase", "description": "Historique des achats et dettes fournisseurs" },
+    "sales": { "schema": "Sale", "description": "Historique des ventes et créances clients" },
+    "caisseState": { "schema": "CaisseState", "description": "Solde de la caisse centrale (un doc par user)" },
+    "bankAccounts": { "schema": "BankAccount", "description": "Comptes bancaires" }
+  }
+}

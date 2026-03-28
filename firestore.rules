@@ -1,0 +1,245 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: suppliers
+    // Fields: name (string), phone (string), address (string), categoryId (string), balance (number), userId (string)
+    //
+    // Collection: customers
+    // Fields: name (string), phone (string), address (string), balance (number), userId (string)
+    //
+    // Collection: categories
+    // Fields: name (string), type (string: supplier|expense|revenue), userId (string)
+    //
+    // Collection: payments
+    // Fields: supplierId (string), amount (number), method (string: cash|cheque|transfer), date (timestamp), chequeId (string?), bankAccountId (string?), userId (string)
+    //
+    // Collection: customerPayments
+    // Fields: customerId (string), amount (number), method (string: cash|cheque|transfer), date (timestamp), chequeId (string?), bankAccountId (string?), userId (string)
+    //
+    // Collection: cheques
+    // Fields: number (string), amount (number), dueDate (timestamp), supplierId (string?), customerId (string?), status (string: pending|cashed|cancelled), type (string: issued|received), bankAccountId (string), userId (string), date (timestamp)
+    //
+    // Collection: revenues
+    // Fields: source (string), amount (number), method (string), date (timestamp), categoryId (string), userId (string), description (string)
+    //
+    // Collection: expenses
+    // Fields: description (string), amount (number), date (timestamp), categoryId (string), method (string), userId (string)
+    //
+    // Collection: transfers
+    // Fields: amount (number), date (timestamp), bankAccountId (string?), reference (string?), userId (string), from (string), to (string)
+    //
+    // Collection: purchases
+    // Fields: supplierId (string), amount (number), description (string), date (timestamp), userId (string)
+    //
+    // Collection: sales
+    // Fields: customerId (string), amount (number), description (string), date (timestamp), userId (string)
+    //
+    // Collection: caisseState
+    // Fields: balance (number), userId (string)
+    //
+    // Collection: bankAccounts
+    // Fields: bankName (string), accountNumber (string), agency (string), balance (number), type (string), userId (string)
+    //
+    // Collection: users
+    // Fields: role (string), email (string), name (string)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "bouhajjatrans@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && (request.auth.uid == userId || isAdmin());
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+    }
+
+    function userIdUnchanged() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == request.auth.uid;
+    }
+
+    function userIdNotModified() {
+      return !('userId' in request.resource.data) || request.resource.data.userId == resource.data.userId;
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidSupplier(data) {
+      return data.name is string && data.name.size() > 0 &&
+             data.phone is string &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidCustomer(data) {
+      return data.name is string && data.name.size() > 0 &&
+             data.phone is string &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidCategory(data) {
+      return data.name is string && data.name.size() > 0 &&
+             data.type in ['supplier', 'expense', 'revenue'] &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidPayment(data) {
+      return data.amount is number && data.amount >= 0 &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidCheque(data) {
+      return data.amount is number && data.amount >= 0 &&
+             data.status in ['pending', 'cashed', 'cancelled'] &&
+             data.type in ['issued', 'received'] &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidRevenue(data) {
+      return data.amount is number && data.amount >= 0 &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidExpense(data) {
+      return data.amount is number && data.amount >= 0 &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidTransfer(data) {
+      return data.amount is number && data.amount >= 0 &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidCaisseState(data) {
+      return data.balance is number &&
+             data.userId == request.auth.uid;
+    }
+
+    function isValidBankAccount(data) {
+      return data.bankName is string && data.bankName.size() > 0 &&
+             data.balance is number &&
+             data.userId == request.auth.uid;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /suppliers/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidSupplier(request.resource.data);
+      allow update: if isDocOwner() && isValidSupplier(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /customers/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidCustomer(request.resource.data);
+      allow update: if isDocOwner() && isValidCustomer(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /categories/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidCategory(request.resource.data);
+      allow update: if isDocOwner() && isValidCategory(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /payments/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidPayment(request.resource.data);
+      allow update: if isDocOwner() && isValidPayment(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /customerPayments/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidPayment(request.resource.data);
+      allow update: if isDocOwner() && isValidPayment(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /cheques/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidCheque(request.resource.data);
+      allow update: if isDocOwner() && isValidCheque(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /revenues/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidRevenue(request.resource.data);
+      allow update: if isDocOwner() && isValidRevenue(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /expenses/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidExpense(request.resource.data);
+      allow update: if isDocOwner() && isValidExpense(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /transfers/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidTransfer(request.resource.data);
+      allow update: if isDocOwner() && isValidTransfer(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /purchases/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isDocOwner() && request.resource.data.userId == request.auth.uid && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /sales/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isDocOwner() && request.resource.data.userId == request.auth.uid && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /caisseState/{id} {
+      allow read: if isOwner(id);
+      allow create: if isOwner(id) && isValidCaisseState(request.resource.data);
+      allow update: if isOwner(id) && isValidCaisseState(request.resource.data) && userIdNotModified();
+      allow delete: if isOwner(id);
+    }
+
+    match /bankAccounts/{id} {
+      allow read: if isDocOwner();
+      allow create: if isAuthenticated() && isValidBankAccount(request.resource.data);
+      allow update: if isDocOwner() && isValidBankAccount(request.resource.data) && userIdNotModified();
+      allow delete: if isDocOwner();
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+  }
+}
